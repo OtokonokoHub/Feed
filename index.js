@@ -4,6 +4,33 @@ var mysql       = require('mysql');
 var mysqlConfig = require('./mysql.json');
 var pool        = mysql.createPool(mysqlConfig);
 
+function feed(rows, conn){
+    var count = Math.floor(rows.length / 1000);
+    count     = (rows.length % 1000 === 0? count:count + 1);
+    var cur   = 0;
+    console.log(rows);
+    for (var i = 0; i < count; i++) {
+        var sql    = 'replace into post_feed(post_id, user_id, forward_id) values';
+        var params = [];
+        for (var j = 0; j < ((i + 1) * 1000 > rows.length? rows.length : (i + 1) * 1000); j++) {
+            sql += ' (?, ?, ?),';
+            params.push(data.post_id);
+            params.push(rows[j].target);
+            params.push(data.forward_id);
+        };
+        sql = sql.substring(0, sql.length - 1);
+        conn.query(sql, params, function(insert_err, result){
+            if (insert_err) {
+                console.log(insert_err);
+            };
+            cur++;
+            if (cur == count) {
+                conn.release();
+            };
+        });
+    };
+}
+
 var server    = net.createServer(function(conn){
     conn.on('data', function(data) {
         data = JSON.parse(data.toString());
@@ -31,34 +58,16 @@ var server    = net.createServer(function(conn){
                             console.log(err);
                         };
                         memcached.set('user.relation.' + data.user_id, rows);
-                        var count = Math.floor(rows.length / 1000);
-                        count     = (rows.length % 1000 === 0? count:count + 1);
-                        var cur   = 0;
-                        console.log(rows);
-                        for (var i = 0; i < count; i++) {
-                            var sql    = 'replace into post_feed(post_id, user_id, forward_id) values';
-                            var params = [];
-                            for (var j = 0; j < ((i + 1) * 1000 > rows.length? rows.length : (i + 1) * 1000); j++) {
-                                sql += ' (?, ?, ?),';
-                                params.push(data.post_id);
-                                params.push(rows[j].target);
-                                params.push(data.forward_id);
-                            };
-                            sql = sql.substring(0, sql.length - 1);
-                            conn.query(sql, params, function(insert_err, result){
-                                if (insert_err) {
-                                    console.log(insert_err);
-                                };
-                                cur++;
-                                if (cur == count) {
-                                    conn.release();
-                                };
-                            });
-                        };
+                        feed(rows, conn);
                     });
                 }
             });  
-        };
+        }
+        else{
+            pool.getConnection(function(err,conn){
+                feed(userRelation, conn);
+            });
+        }
 
     });
 });
