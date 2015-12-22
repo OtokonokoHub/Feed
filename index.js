@@ -51,32 +51,35 @@ var server    = net.createServer(function(conn){
         if (!data.hasOwnProperty('forward_id')) {
             data.forward_id = 0;
         };
-        var userRelation = memcached.get('user.relation.' + data.user_id);
-        console.log(userRelation);
-        if (userRelation == []) {
-            return;
-        };
-        if (!userRelation) {
-            pool.getConnection(function(err,conn){  
-                if(err){  
-                    console.log(err);
-                }else{  
-                    conn.query("select target from user_relation where status in (0,1) and origin = ?", [data.user_id], function(err,rows,fields){    
-                        if (err) {
-                            console.log(err);
-                        };
-                        memcached.set('user.relation.' + data.user_id, rows);
-                        feed(rows, data, conn);
-                    });
-                }
-            });  
-        }
-        else{
-            pool.getConnection(function(err,conn){
-                feed(userRelation, data, conn);
-            });
-        }
-
+        memcached.get('user.relation.' + data.user_id, function(err, relation){
+            if (err) {
+                console.log(err);
+            };
+            if (!relation) {
+                pool.getConnection(function(err,conn){  
+                    if(err){  
+                        console.log(err);
+                    }else{  
+                        conn.query("select target from user_relation where status in (0,1) and origin = ?", [data.user_id], function(err,rows,fields){    
+                            if (err) {
+                                console.log(err);
+                            };
+                            memcached.set('user.relation.' + data.user_id, rows, 3600, function(err){
+                                if (err) {
+                                    console.log(err);
+                                };
+                            });
+                            feed(rows, data, conn);
+                        });
+                    }
+                });  
+            }
+            else{
+                pool.getConnection(function(err,conn){
+                    feed(userRelation, data, conn);
+                });
+            }
+        });
     });
 });
 server.on('error', function(err){
