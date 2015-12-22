@@ -74,4 +74,4 @@ var server    = net.createServer(function(conn){
 server.on('error', function(err){
     console.log(err);
 });
-server.listen(5555, '127.0.0.1');
+server.listen('/dev/shm/feed.sock');
