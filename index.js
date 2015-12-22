@@ -11,7 +11,7 @@ fs.mkdir('/run/otohub', function(err){
     };
 });
 
-function feed(rows, conn){
+function feed(rows, baseInfo, conn){
     var count = Math.floor(rows.length / 1000);
     count     = (rows.length % 1000 === 0? count:count + 1);
     var cur   = 0;
@@ -21,9 +21,9 @@ function feed(rows, conn){
         var params = [];
         for (var j = 0; j < ((i + 1) * 1000 > rows.length? rows.length : (i + 1) * 1000); j++) {
             sql += ' (?, ?, ?),';
-            params.push(data.post_id);
+            params.push(baseInfo.post_id);
             params.push(rows[j].target);
-            params.push(data.forward_id);
+            params.push(baseInfo.forward_id);
         };
         sql = sql.substring(0, sql.length - 1);
         conn.query(sql, params, function(insert_err, result){
@@ -66,14 +66,14 @@ var server    = net.createServer(function(conn){
                             console.log(err);
                         };
                         memcached.set('user.relation.' + data.user_id, rows);
-                        feed(rows, conn);
+                        feed(rows, data, conn);
                     });
                 }
             });  
         }
         else{
             pool.getConnection(function(err,conn){
-                feed(userRelation, conn);
+                feed(userRelation, data, conn);
             });
         }
 
