@@ -1,8 +1,11 @@
 var net         = require('net');
 var Memcached   = require('memcached');
 var mysql       = require('mysql');
+var fs          = require('fs');
 var mysqlConfig = require('./mysql.json');
 var pool        = mysql.createPool(mysqlConfig);
+
+fs.mkdir('/run/otohub');
 
 function feed(rows, conn){
     var count = Math.floor(rows.length / 1000);
@@ -45,6 +48,7 @@ var server    = net.createServer(function(conn){
             data.forward_id = 0;
         };
         var userRelation = memcached.get('user.relation.' + data.user_id);
+        console.log(userRelation);
         if (userRelation == []) {
             return;
         };
@@ -74,4 +78,6 @@ var server    = net.createServer(function(conn){
 server.on('error', function(err){
     console.log(err);
 });
-server.listen('/dev/shm/feed.sock');
+server.listen('/run/otohub/feed.sock', function(){
+    fs.chmod('/run/otohub/feed.sock', 0666);
+});
