@@ -15,7 +15,6 @@ function feed(rows, baseInfo, conn){
     var count = Math.floor(rows.length / 1000);
     count     = (rows.length % 1000 === 0? count:count + 1);
     var cur   = 0;
-    console.log(rows);
     for (var i = 0; i < count; i++) {
         var sql    = 'replace into post_feed(post_id, user_id, forward_id) values';
         var params = [];
