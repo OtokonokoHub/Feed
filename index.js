@@ -74,6 +74,11 @@ var server    = net.createServer(function(conn){
                 });  
             }
             else{
+                memcached.touch('user.relation.' + data.user_id, 3600, function(err){
+                    if (err) {
+                        console.log(err);
+                    };
+                });
                 pool.getConnection(function(err,conn){
                     feed(relation, data, conn);
                 });
