@@ -76,7 +76,7 @@ var server    = net.createServer(function(conn){
             }
             else{
                 pool.getConnection(function(err,conn){
-                    feed(userRelation, data, conn);
+                    feed(relation, data, conn);
                 });
             }
         });
