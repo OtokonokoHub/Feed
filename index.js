@@ -5,7 +5,11 @@ var fs          = require('fs');
 var mysqlConfig = require('./mysql.json');
 var pool        = mysql.createPool(mysqlConfig);
 
-fs.mkdir('/run/otohub');
+fs.mkdir('/run/otohub', function(err){
+    if (err) {
+        console.log(err);
+    };
+});
 
 function feed(rows, conn){
     var count = Math.floor(rows.length / 1000);
