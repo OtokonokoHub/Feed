@@ -37,9 +37,14 @@ function feed(rows, baseInfo, conn){
     };
 }
 
-var server    = net.createServer(function(conn){
-    conn.on('data', function(data) {
-        data = JSON.parse(data.toString());
+var server = net.createServer(function(conn){
+    var content = '';
+    conn.on('data', function(data){
+        content += data;
+    });
+    conn.on('drain', function() {
+        console.log(content);
+        data = JSON.parse(content);
         var memcached = new Memcached('127.0.0.1:11211');
         if (data.post_id == null) {
             return;
@@ -55,7 +60,7 @@ var server    = net.createServer(function(conn){
                 console.log(err);
             };
             if (!relation) {
-                pool.getConnection(function(err,conn){  
+                pool.getConnection(function(err,conn){
                     if(err){  
                         console.log(err);
                     }else{  
