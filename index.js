@@ -43,7 +43,6 @@ var server = net.createServer(function(conn){
         content += data;
     });
     conn.on('drain', function() {
-        console.log(content);
         data = JSON.parse(content);
         var memcached = new Memcached('127.0.0.1:11211');
         if (data.post_id == null) {
