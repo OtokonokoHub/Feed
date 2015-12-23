@@ -45,11 +45,26 @@ var server = net.createServer(function(conn){
     conn.on('end', function() {
         data = JSON.parse(content);
         var memcached = new Memcached('127.0.0.1:11211');
-        if (data.post_id == null) {
+        if (!data.hasOwnProperty('post_id') || data.post_id == null) {
             return;
         };
-        if (data.user_id == null) {
-            return;
+        if (!data.hasOwnProperty('user_id')) {
+            pool.getConnection(function(err, conn){
+                if (err) {
+                    console.log(err);
+                    return;
+                }
+                else{
+                    conn.query("select author from post where id = ?", [data.post_id], function(err, rows, fields){
+                        conn.release();
+                        if (err) {
+                            console.log(err);
+                            return;
+                        };
+                        data.user_id = rows[0].author;
+                    });
+                }
+            });
         };
         if (!data.hasOwnProperty('forward_id')) {
             data.forward_id = 0;
@@ -57,19 +72,23 @@ var server = net.createServer(function(conn){
         memcached.get('user.relation.' + data.user_id, function(err, relation){
             if (err) {
                 console.log(err);
+                return;
             };
             if (!relation) {
-                pool.getConnection(function(err,conn){
+                pool.getConnection(function(err, conn){
                     if(err){  
                         console.log(err);
+                        conn.release();
+                        return;
                     }else{  
-                        conn.query("select target from user_relation where status in (0,1) and origin = ?", [data.user_id], function(err,rows,fields){    
+                        conn.query("select target from user_relation where status in (0,1) and origin = ?", [data.user_id], function(err, rows, fields){    
                             if (err) {
                                 console.log(err);
                             };
                             memcached.set('user.relation.' + data.user_id, rows, 3600, function(err){
                                 if (err) {
                                     console.log(err);
+                                    return;
                                 };
                             });
                             feed(rows, data, conn);
@@ -84,6 +103,11 @@ var server = net.createServer(function(conn){
                     };
                 });
                 pool.getConnection(function(err,conn){
+                    if(err){  
+                        console.log(err);
+                        conn.release();
+                        return;
+                    }
                     feed(relation, data, conn);
                 });
             }
