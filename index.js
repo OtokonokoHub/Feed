@@ -55,13 +55,13 @@ var server = net.createServer(function(conn){
                     return;
                 }
                 else{
-                    conn.query("select author from post where id = ?", [data.post_id], function(err, rows, fields){
+                    conn.query("select created_by from post where id = ?", [data.post_id], function(err, rows, fields){
                         conn.release();
                         if (err) {
                             console.log(err);
                             return;
                         };
-                        data.user_id = rows[0].author;
+                        data.user_id = rows[0].created_by;
                     });
                 }
             });
