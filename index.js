@@ -12,13 +12,13 @@ fs.mkdir('/run/otohub', function(err){
 });
 
 function feed(rows, baseInfo, conn){
-    var count = Math.floor(rows.length / 1000);
-    count     = (rows.length % 1000 === 0? count:count + 1);
+    var count = Math.floor(rows.length / 3000);
+    count     = (rows.length % 3000 === 0? count:count + 1);
     var cur   = 0;
     for (var i = 0; i < count; i++) {
         var sql    = 'replace into post_feed(post_id, user_id, forward_id) values';
         var params = [];
-        for (var j = 0; j < ((i + 1) * 1000 > rows.length? rows.length : (i + 1) * 1000); j++) {
+        for (var j = 0; j < ((i + 1) * 3000 > rows.length? rows.length : (i + 1) * 3000); j++) {
             sql += ' (?, ?, ?),';
             params.push(baseInfo.post_id);
             params.push(rows[j].target);
